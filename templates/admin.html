@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SchoolBot — Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:        #4F46E5;
+      --primary-dark:   #4338CA;
+      --primary-light:  #EEF2FF;
+      --success:        #059669;
+      --success-light:  #D1FAE5;
+      --danger:         #DC2626;
+      --danger-light:   #FEE2E2;
+      --warning:        #D97706;
+      --warning-light:  #FEF3C7;
+      --bg:             #F1F5F9;
+      --card:           #FFFFFF;
+      --text:           #0F172A;
+      --text-sub:       #64748B;
+      --border:         #E2E8F0;
+      --shadow:         0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+      --shadow-md:      0 4px 12px rgba(0,0,0,.08);
+      --radius:         12px;
+      --radius-sm:      8px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4F46E5 100%);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(79,70,229,.35);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; }
+
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,.15);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 16px;
+    }
+
+    .brand-text .name { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -.3px; }
+    .brand-text .sub  { font-size: 11px; color: rgba(255,255,255,.55); }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .pill {
+      background: rgba(255,255,255,.1);
+      color: rgba(255,255,255,.75);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .btn-logout {
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.2);
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,.22); }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .content { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-size: 22px; font-weight: 700; letter-spacing: -.4px; }
+    .page-header p  { color: var(--text-sub); font-size: 13px; margin-top: 3px; }
+
+    /* ── Toast ───────────────────────────────────────────── */
+    .toast {
+      position: fixed; top: 80px; right: 24px;
+      padding: 14px 20px; border-radius: 12px;
+      font-size: 13px; font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,.15);
+      z-index: 9999; display: flex; align-items: center; gap: 10px;
+      animation: toast-in .3s ease;
+    }
+    @keyframes toast-in { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .toast-info    { background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; }
+    .toast-success { background: var(--success-light); color: var(--success); border: 1px solid #A7F3D0; }
+    .toast-error   { background: var(--danger-light); color: var(--danger); border: 1px solid #FECACA; }
+
+    /* ── Sync button states ──────────────────────────────── */
+    .btn-syncing { background: #92400E !important; cursor: not-allowed !important; }
+
+    /* ── Stats ───────────────────────────────────────────── */
+    .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px;
+    }
+
+    .stat-icon {
+      width: 50px; height: 50px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .stat-icon.indigo { background: var(--primary-light); color: var(--primary); }
+    .stat-icon.green  { background: var(--success-light); color: var(--success); }
+    .stat-icon.red    { background: var(--danger-light);  color: var(--danger);  }
+
+    .stat-num { font-size: 30px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; }
+    .stat-lbl { font-size: 12px; color: var(--text-sub); font-weight: 500; margin-top: 4px; }
+
+    /* ── Card ────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title i { color: var(--primary); }
+
+    .card-body { padding: 24px; }
+
+    /* ── Form ────────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 14px;
+      align-items: end;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      background: #FAFAFA;
+    }
+    .form-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79,70,229,.1);
+      background: #fff;
+    }
+    .form-group input::placeholder { color: #CBD5E1; }
+
+    /* ── Buttons ─────────────────────────────────────────── */
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); box-shadow: 0 4px 12px rgba(79,70,229,.3); transform: translateY(-1px); }
+
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #047857; }
+
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #B91C1C; }
+
+    .btn-warning { background: var(--warning); color: #fff; }
+    .btn-warning:hover { background: #B45309; }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+
+    /* ── Alert ───────────────────────────────────────────── */
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .alert-error { background: var(--danger-light); color: var(--danger); border: 1px solid #FECACA; }
+
+    /* ── Table ───────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 15px 16px;
+      border-bottom: 1px solid #F1F5F9;
+      vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #FAFBFF; }
+
+    /* ── School Cell ─────────────────────────────────────── */
+    .school-cell { display: flex; align-items: center; gap: 12px; }
+
+    .school-avatar {
+      width: 42px; height: 42px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, var(--primary), #818CF8);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 16px; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .school-name { font-weight: 600; font-size: 14px; }
+    .school-url  { font-size: 11.5px; color: var(--text-sub); margin-top: 2px; }
+    .school-id   { font-size: 10.5px; color: #94A3B8; font-family: monospace; margin-top: 1px; }
+
+    /* ── Badge ───────────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
+    .badge-active   { background: var(--success-light); color: var(--success); }
+    .badge-inactive { background: var(--danger-light);  color: var(--danger);  }
+
+    /* ── Embed Code ──────────────────────────────────────── */
+    .embed-wrap { display: flex; flex-direction: column; gap: 5px; max-width: 270px; }
+
+    .embed-code {
+      background: #F1F5F9;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      color: #475569;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+      display: inline-flex; align-items: center; gap: 4px;
+      align-self: flex-start;
+    }
+    .copy-btn:hover { background: var(--bg); }
+    .copy-btn.copied { background: var(--success-light); color: var(--success); border-color: #A7F3D0; }
+
+    /* ── Actions ─────────────────────────────────────────── */
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* ── Empty ───────────────────────────────────────────── */
+    .empty-state { text-align: center; padding: 60px 24px; }
+
+    .empty-icon {
+      width: 72px; height: 72px;
+      background: var(--primary-light);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: var(--primary);
+      margin: 0 auto 16px;
+    }
+
+    .empty-state h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .empty-state p  { font-size: 13px; color: var(--text-sub); }
+
+    /* ── Login Page ──────────────────────────────────────── */
+    .login-page {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4F46E5 100%);
+      padding: 24px;
+    }
+
+    .login-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 48px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.3);
+    }
+
+    .login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+
+    .login-logo-icon {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, var(--primary), #818CF8);
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 20px;
+    }
+
+    .login-logo-name { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+
+    .login-heading { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .login-sub { color: var(--text-sub); font-size: 13.5px; margin-bottom: 30px; }
+
+    .login-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .input-icon { position: relative; margin-bottom: 20px; }
+    .input-icon i {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub); font-size: 14px;
+    }
+    .input-icon input { padding-left: 40px !important; width: 100%; }
+
+    .btn-login { width: 100%; padding: 12px; font-size: 14px; border-radius: 10px; justify-content: center; }
+
+    .login-note { text-align: center; margin-top: 20px; font-size: 12px; color: var(--text-sub); }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      .header { padding: 0 16px; }
+      .content { padding: 20px 16px; }
+      .login-card { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+{% if page == 'login' %}
+<!-- ══════════════════════════════ LOGIN PAGE ══════════════════════════════ -->
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon"><i class="fas fa-robot"></i></div>
+      <div class="login-logo-name">SchoolBot</div>
+    </div>
+    <div class="login-heading">Welcome back</div>
+    <div class="login-sub">Sign in to your admin dashboard</div>
+
+    {% if error %}
+    <div class="alert alert-error"><i class="fas fa-circle-exclamation"></i> {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/admin/login">
+      <label class="login-label">Password</label>
+      <div class="input-icon">
+        <i class="fas fa-lock"></i>
+        <input
+          type="password"
+          name="password"
+          placeholder="Enter admin password"
+          autofocus
+          required
+          style="width:100%;padding:11px 14px 11px 40px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none;"
+        >
+      </div>
+      <button type="submit" class="btn btn-primary btn-login">
+        <i class="fas fa-arrow-right-to-bracket"></i> Sign In
+      </button>
+    </form>
+    <div class="login-note">SchoolBot &mdash; AI Chatbot Platform for Schools</div>
+  </div>
+</div>
+
+{% elif page == 'panel' %}
+<!-- ══════════════════════════════ DASHBOARD ══════════════════════════════ -->
+
+<!-- Toast notification -->
+{% if msg == 'scrape_started' %}
+<div class="toast toast-info" id="toast">
+  <i class="fas fa-rotate fa-spin"></i>
+  Syncing data for <strong>{{ active_sid }}</strong> — running in background&hellip;
+</div>
+{% elif msg == 'already_running' %}
+<div class="toast toast-info" id="toast">
+  <i class="fas fa-circle-info"></i>
+  Sync already in progress for <strong>{{ active_sid }}</strong>
+</div>
+{% endif %}
+
+<header class="header">
+  <div class="brand">
+    <div class="brand-icon"><i class="fas fa-robot"></i></div>
+    <div class="brand-text">
+      <div class="name">SchoolBot</div>
+      <div class="sub">Admin Dashboard</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="pill"><i class="fas fa-circle" style="color:#4ade80;font-size:8px"></i> &nbsp;System Online</span>
+    <a href="/admin/logout" class="btn-logout"><i class="fas fa-right-from-bracket"></i> Logout</a>
+  </div>
+</header>
+
+<div class="content">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Schools Overview</h1>
+    <p>Manage your chatbot deployments across all client schools</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-icon indigo"><i class="fas fa-school"></i></div>
+      <div>
+        <div class="stat-num">{{ schools|length }}</div>
+        <div class="stat-lbl">Total Schools</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+      <div>
+        <div class="stat-num">{{ schools|selectattr('active')|list|length }}</div>
+        <div class="stat-lbl">Active Chatbots</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red"><i class="fas fa-circle-pause"></i></div>
+      <div>
+        <div class="stat-num">{{ schools|rejectattr('active')|list|length }}</div>
+        <div class="stat-lbl">Inactive Chatbots</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add School -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="fas fa-plus-circle"></i> Add New School</div>
+    </div>
+    <div class="card-body">
+      {% if error %}
+      <div class="alert alert-error"><i class="fas fa-triangle-exclamation"></i> {{ error }}</div>
+      {% endif %}
+      <form method="POST" action="/admin/add-school">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>School Name *</label>
+            <input type="text" name="school_name" placeholder="e.g. Beacon House School" required>
+          </div>
+          <div class="form-group">
+            <label>Website URL</label>
+            <input type="url" name="school_url" placeholder="https://school.edu.pk">
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" name="phone" placeholder="042-XXXXXXXX">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary" style="height:42px;">
+              <i class="fas fa-plus"></i> Add School
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Schools Table -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="fas fa-list"></i> Registered Schools</div>
+      <span style="font-size:12px;color:var(--text-sub);">{{ schools|length }} total</span>
+    </div>
+
+    {% if schools %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>School</th>
+            <th>Status</th>
+            <th>Embed Code</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for school in schools %}
+          <tr>
+            <td>
+              <div class="school-cell">
+                <div class="school-avatar">{{ school.school_name[0].upper() }}</div>
+                <div>
+                  <div class="school-name">{{ school.school_name }}</div>
+                  <div class="school-url">{{ school.school_url or 'No website URL' }} &bull; {{ school.phone or 'No phone' }}</div>
+                  <div class="school-id">ID: {{ school.school_id }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              {% if school.active %}
+              <span class="badge badge-active">Active</span>
+              {% else %}
+              <span class="badge badge-inactive">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="embed-wrap">
+                <div class="embed-code" id="embed-{{ school.school_id }}">
+                  &lt;script src="{{ server_url }}/widget/{{ school.school_id }}.js"&gt;&lt;/script&gt;
+                </div>
+                <button class="copy-btn" onclick="copyEmbed('{{ school.school_id }}', this)">
+                  <i class="fas fa-copy"></i> Copy Code
+                </button>
+              </div>
+            </td>
+            <td>
+              <div class="actions">
+                <form method="POST" action="/admin/toggle/{{ school.school_id }}" style="display:inline">
+                  {% if school.active %}
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-pause"></i> Deactivate
+                  </button>
+                  {% else %}
+                  <button type="submit" class="btn btn-sm btn-success">
+                    <i class="fas fa-play"></i> Activate
+                  </button>
+                  {% endif %}
+                </form>
+                {% if school.school_url %}
+                <form method="POST" action="/admin/scrape/{{ school.school_id }}" style="display:inline"
+                      onsubmit="syncStart('{{ school.school_id }}', this)">
+                  {% set st = (scrape_status or {}).get(school.school_id, 'idle') %}
+                  {% if st == 'running' %}
+                  <button type="button" class="btn btn-sm btn-warning btn-syncing" disabled>
+                    <i class="fas fa-rotate fa-spin"></i> Syncing&hellip;
+                  </button>
+                  {% else %}
+                  <button type="submit" class="btn btn-sm btn-warning" id="sync-{{ school.school_id }}">
+                    <i class="fas fa-rotate"></i> Sync Data
+                  </button>
+                  {% endif %}
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-school"></i></div>
+      <h3>No schools added yet</h3>
+      <p>Use the form above to add your first school and generate an embed code.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+// ── Copy embed code ───────────────────────────────────
+function copyEmbed(schoolId, btn) {
+  var text = '<script src="{{ server_url }}/widget/' + schoolId + '.js"><\/script>';
+  navigator.clipboard.writeText(text).then(function() {
+    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.innerHTML = '<i class="fas fa-copy"></i> Copy Code';
+      btn.classList.remove('copied');
+    }, 2500);
+  });
+}
+
+// ── Sync button: show loading immediately on click ────
+function syncStart(schoolId, form) {
+  var btn = document.getElementById('sync-' + schoolId);
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('btn-syncing');
+    btn.innerHTML = '<i class="fas fa-rotate fa-spin"></i> Syncing&hellip;';
+  }
+}
+
+// ── Auto-dismiss toast after 5s ──────────────────────
+var toast = document.getElementById('toast');
+if (toast) {
+  setTimeout(function() {
+    toast.style.transition = 'opacity .4s';
+    toast.style.opacity = '0';
+    setTimeout(function() { toast.remove(); }, 400);
+  }, 5000);
+}
+
+// ── Poll scrape status for any running syncs ─────────
+{% for school in schools %}
+{% if scrape_status and scrape_status.get(school.school_id) == 'running' %}
+(function() {
+  var sid  = '{{ school.school_id }}';
+  var poll = setInterval(function() {
+    fetch('/admin/scrape-status/' + sid)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.status === 'done') {
+          clearInterval(poll);
+          location.reload();
+        } else if (d.status === 'error') {
+          clearInterval(poll);
+          var t = document.createElement('div');
+          t.className = 'toast toast-error';
+          t.innerHTML = '<i class="fas fa-circle-exclamation"></i> Sync failed for {{ school.school_name }}';
+          document.body.prepend(t);
+          setTimeout(function() { t.remove(); }, 5000);
+          location.reload();
+        }
+      });
+  }, 3000);
+})();
+{% endif %}
+{% endfor %}
+</script>
+{% endif %}
+
+</body>
+</html>

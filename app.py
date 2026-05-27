@@ -416,7 +416,7 @@ def widget_js(school_id):
     #_cb_msgs::-webkit-scrollbar-thumb {{ background:#D1D5DB; border-radius:4px; }}
 
     ._cb_row {{ display:flex; align-items:flex-end; gap:8px; }}
-    ._cb_row.user {{ flex-direction:row-reverse; }}
+    ._cb_row.user {{ justify-content:flex-end; }}
 
     ._cb_ico {{
       width:28px; height:28px; border-radius:8px;
@@ -426,8 +426,10 @@ def widget_js(school_id):
     ._cb_row.bot  ._cb_ico {{ background:linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; }}
     ._cb_row.user ._cb_ico {{ background:#E2E8F0; color:#64748B; }}
 
+    ._cb_wrap {{ min-width:0; max-width:78%; }}
+
     ._cb_bub {{
-      max-width:75%; padding:11px 14px; border-radius:16px;
+      padding:11px 14px; border-radius:16px;
       font-size:13.5px; line-height:1.55; word-break:break-word;
     }}
     ._cb_row.bot  ._cb_bub {{ background:#fff; color:#1E293B; border-bottom-left-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,.07); }}
@@ -565,6 +567,7 @@ def widget_js(school_id):
     t.className = '_cb_time';
     t.textContent = timeNow();
     var inner = document.createElement('div');
+    inner.className = '_cb_wrap';
     inner.appendChild(bub);
     inner.appendChild(t);
     if (who === 'bot') {{

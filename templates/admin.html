@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SchoolBot — Admin Dashboard</title>
+  <title>ChatBot — Admin Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
@@ -397,10 +397,75 @@
 
     .login-note { text-align: center; margin-top: 20px; font-size: 12px; color: var(--text-sub); }
 
+    /* ── Custom Info Panel ───────────────────────────────── */
+    .info-row td {
+      padding: 0 !important;
+      border-bottom: none !important;
+    }
+    .info-panel {
+      display: none;
+      background: #F8FAFF;
+      border-top: 1px solid #E0E7FF;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-panel.open { display: block; }
+    .info-panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .info-panel-title {
+      font-size: 13px; font-weight: 700; color: var(--primary);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .info-label {
+      font-size: 11px; font-weight: 700; color: var(--text-sub);
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px;
+    }
+    .info-textarea {
+      width: 100%; height: 130px; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: 12.5px; font-family: inherit; color: var(--text);
+      resize: vertical; outline: none; background: #fff;
+      transition: border-color .2s;
+    }
+    .info-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.08); }
+    .file-drop {
+      border: 2px dashed #C7D2FE; border-radius: 8px;
+      padding: 20px; text-align: center;
+      cursor: pointer; transition: all .2s; background: #fff;
+      position: relative;
+    }
+    .file-drop:hover { border-color: var(--primary); background: #EEF2FF; }
+    .file-drop input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+    }
+    .file-drop-icon { font-size: 22px; color: var(--primary); margin-bottom: 6px; }
+    .file-drop-text { font-size: 12px; color: var(--text-sub); }
+    .file-drop-text strong { color: var(--primary); }
+    .file-name-display { font-size: 11px; color: var(--success); margin-top: 6px; font-weight: 600; }
+    .info-actions { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+    .info-existing {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; color: var(--text-sub);
+      max-height: 80px; overflow-y: auto; line-height: 1.6;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .toggle-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      cursor: pointer; border: none; font-family: inherit;
+    }
+    .toggle-on  { background: #D1FAE5; color: #059669; }
+    .toggle-off { background: #FEE2E2; color: #DC2626; }
+
     /* ── Responsive ──────────────────────────────────────── */
     @media (max-width: 900px) {
       .form-grid { grid-template-columns: 1fr 1fr; }
       .stats { grid-template-columns: 1fr 1fr; }
+      .info-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 600px) {
       .form-grid { grid-template-columns: 1fr; }
@@ -419,7 +484,7 @@
   <div class="login-card">
     <div class="login-logo">
       <div class="login-logo-icon"><i class="fas fa-robot"></i></div>
-      <div class="login-logo-name">SchoolBot</div>
+      <div class="login-logo-name">ChatBot</div>
     </div>
     <div class="login-heading">Welcome back</div>
     <div class="login-sub">Sign in to your admin dashboard</div>
@@ -445,7 +510,7 @@
         <i class="fas fa-arrow-right-to-bracket"></i> Sign In
       </button>
     </form>
-    <div class="login-note">SchoolBot &mdash; AI Chatbot Platform for Schools</div>
+    <div class="login-note">ChatBot &mdash; AI Chatbot Platform for Any Website</div>
   </div>
 </div>
 
@@ -463,13 +528,23 @@
   <i class="fas fa-circle-info"></i>
   Sync already in progress for <strong>{{ active_sid }}</strong>
 </div>
+{% elif msg == 'info_saved' %}
+<div class="toast toast-success" id="toast">
+  <i class="fas fa-check-circle"></i>
+  Custom info saved for <strong>{{ active_sid }}</strong>
+</div>
+{% elif msg == 'info_deleted' %}
+<div class="toast toast-error" id="toast">
+  <i class="fas fa-trash"></i>
+  Custom info cleared for <strong>{{ active_sid }}</strong>
+</div>
 {% endif %}
 
 <header class="header">
   <div class="brand">
     <div class="brand-icon"><i class="fas fa-robot"></i></div>
     <div class="brand-text">
-      <div class="name">SchoolBot</div>
+      <div class="name">ChatBot</div>
       <div class="sub">Admin Dashboard</div>
     </div>
   </div>
@@ -483,17 +558,17 @@
 
   <!-- Page Header -->
   <div class="page-header">
-    <h1>Schools Overview</h1>
-    <p>Manage your chatbot deployments across all client schools</p>
+    <h1>Clients Overview</h1>
+    <p>Manage your chatbot deployments across all clients</p>
   </div>
 
   <!-- Stats -->
   <div class="stats">
     <div class="stat-card">
-      <div class="stat-icon indigo"><i class="fas fa-school"></i></div>
+      <div class="stat-icon indigo"><i class="fas fa-building"></i></div>
       <div>
         <div class="stat-num">{{ schools|length }}</div>
-        <div class="stat-lbl">Total Schools</div>
+        <div class="stat-lbl">Total Clients</div>
       </div>
     </div>
     <div class="stat-card">
@@ -515,7 +590,7 @@
   <!-- Add School -->
   <div class="card">
     <div class="card-head">
-      <div class="card-title"><i class="fas fa-plus-circle"></i> Add New School</div>
+      <div class="card-title"><i class="fas fa-plus-circle"></i> Add New Client</div>
     </div>
     <div class="card-body">
       {% if error %}
@@ -524,12 +599,12 @@
       <form method="POST" action="/admin/add-school">
         <div class="form-grid">
           <div class="form-group">
-            <label>School Name *</label>
-            <input type="text" name="school_name" placeholder="e.g. Beacon House School" required>
+            <label>Client Name *</label>
+            <input type="text" name="school_name" placeholder="e.g. ABC Company" required>
           </div>
           <div class="form-group">
             <label>Website URL</label>
-            <input type="url" name="school_url" placeholder="https://school.edu.pk">
+            <input type="url" name="school_url" placeholder="https://yourwebsite.com">
           </div>
           <div class="form-group">
             <label>Phone Number</label>
@@ -537,7 +612,7 @@
           </div>
           <div>
             <button type="submit" class="btn btn-primary" style="height:42px;">
-              <i class="fas fa-plus"></i> Add School
+              <i class="fas fa-plus"></i> Add Client
             </button>
           </div>
         </div>
@@ -548,7 +623,7 @@
   <!-- Schools Table -->
   <div class="card">
     <div class="card-head">
-      <div class="card-title"><i class="fas fa-list"></i> Registered Schools</div>
+      <div class="card-title"><i class="fas fa-list"></i> Registered Clients</div>
       <span style="font-size:12px;color:var(--text-sub);">{{ schools|length }} total</span>
     </div>
 
@@ -557,7 +632,7 @@
       <table>
         <thead>
           <tr>
-            <th>School</th>
+            <th>Client</th>
             <th>Status</th>
             <th>Embed Code</th>
             <th>Actions</th>
@@ -621,6 +696,91 @@
                   {% endif %}
                 </form>
                 {% endif %}
+                {%- set has_info = school.custom_info is defined and school.custom_info and school.custom_info.strip() %}
+                <button type="button"
+                  class="btn btn-sm"
+                  style="background:{% if has_info %}#4F46E5{% else %}#6366F1{% endif %};color:#fff;"
+                  onclick="toggleInfo('{{ school.school_id }}')">
+                  <i class="fas fa-{% if has_info %}pen-to-square{% else %}file-circle-plus{% endif %}"></i>
+                  {% if has_info %}Edit Info{% else %}Add Info{% endif %}
+                </button>
+              </div>
+            </td>
+          </tr>
+          <!-- Custom Info Panel Row -->
+          <tr class="info-row">
+            <td colspan="4">
+              {%- set has_info = school.custom_info is defined and school.custom_info and school.custom_info.strip() %}
+              {%- set info_on  = school.get('custom_info_enabled', True) if school.get is defined else True %}
+              <div class="info-panel {% if open_info_sid == school.school_id %}open{% endif %}"
+                   id="info-{{ school.school_id }}">
+                <div class="info-panel-head">
+                  <div class="info-panel-title">
+                    <i class="fas fa-file-circle-plus"></i>
+                    Custom Info
+                    <span style="font-weight:400;font-size:12px;color:var(--text-sub);">
+                      — Fallback when website data doesn't have the answer
+                    </span>
+                  </div>
+                  {% if has_info %}
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <form method="POST" action="/admin/custom-info/{{ school.school_id }}" style="display:inline">
+                      <input type="hidden" name="action" value="toggle">
+                      <button type="submit" class="toggle-badge {% if info_on %}toggle-on{% else %}toggle-off{% endif %}">
+                        <i class="fas fa-{% if info_on %}check{% else %}xmark{% endif %}"></i>
+                        {% if info_on %}Enabled{% else %}Disabled{% endif %}
+                      </button>
+                    </form>
+                    <form method="POST" action="/admin/custom-info/{{ school.school_id }}" style="display:inline"
+                          onsubmit="return confirm('Delete all custom info for this client?')">
+                      <input type="hidden" name="action" value="delete">
+                      <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i> Clear All
+                      </button>
+                    </form>
+                  </div>
+                  {% endif %}
+                </div>
+
+                {% if has_info %}
+                <div style="margin-bottom:14px;">
+                  <div class="info-label">Current Saved Info</div>
+                  <div class="info-existing">{{ school.custom_info }}</div>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="/admin/custom-info/{{ school.school_id }}"
+                      enctype="multipart/form-data">
+                  <input type="hidden" name="action" value="save">
+                  <div class="info-grid">
+                    <div>
+                      <div class="info-label"><i class="fas fa-keyboard"></i> Type or paste info</div>
+                      <textarea class="info-textarea" name="custom_info"
+                        placeholder="e.g.&#10;Portfolio: Project A, Project B&#10;Contact: info@company.com&#10;Fee: Rs. 10,000/month&#10;&#10;Anything the website doesn't show..."></textarea>
+                    </div>
+                    <div>
+                      <div class="info-label"><i class="fas fa-file-arrow-up"></i> Upload PDF or Image</div>
+                      <div class="file-drop">
+                        <input type="file" name="info_file" accept=".pdf,.png,.jpg,.jpeg,.webp"
+                               onchange="showFileName('{{ school.school_id }}', this)">
+                        <div class="file-drop-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                        <div class="file-drop-text">
+                          Drop file here or <strong>browse</strong><br>
+                          <span style="font-size:11px;color:#94A3B8;">PDF, PNG, JPG, WEBP — text extracted automatically</span>
+                        </div>
+                        <div class="file-name-display" id="fname-{{ school.school_id }}"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="info-actions">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-floppy-disk"></i> Save & Apply
+                    </button>
+                    <span style="font-size:11px;color:var(--text-sub);">
+                      New info is added on top of existing. Use "Clear All" to start fresh.
+                    </span>
+                  </div>
+                </form>
               </div>
             </td>
           </tr>
@@ -630,9 +790,9 @@
     </div>
     {% else %}
     <div class="empty-state">
-      <div class="empty-icon"><i class="fas fa-school"></i></div>
-      <h3>No schools added yet</h3>
-      <p>Use the form above to add your first school and generate an embed code.</p>
+      <div class="empty-icon"><i class="fas fa-building"></i></div>
+      <h3>No clients added yet</h3>
+      <p>Use the form above to add your first client and generate an embed code.</p>
     </div>
     {% endif %}
   </div>
@@ -660,6 +820,20 @@ function syncStart(schoolId, form) {
     btn.disabled = true;
     btn.classList.add('btn-syncing');
     btn.innerHTML = '<i class="fas fa-rotate fa-spin"></i> Syncing&hellip;';
+  }
+}
+
+// ── Toggle Custom Info panel ──────────────────────────
+function toggleInfo(schoolId) {
+  var panel = document.getElementById('info-' + schoolId);
+  if (panel) panel.classList.toggle('open');
+}
+
+// ── Show selected filename ────────────────────────────
+function showFileName(schoolId, input) {
+  var el = document.getElementById('fname-' + schoolId);
+  if (el && input.files.length > 0) {
+    el.textContent = '✓ ' + input.files[0].name;
   }
 }
 

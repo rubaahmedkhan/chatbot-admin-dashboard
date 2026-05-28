@@ -11,6 +11,15 @@ load_dotenv()
 MAX_PAGES = 50
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; SchoolChatbot/1.0)'}
 
+CLOUDFLARE_SIGNATURES = [
+    'Just a moment', 'Performing security verification',
+    'security service to protect', 'Enable JavaScript and cookies to continue',
+    'Verification successful', 'Ray ID:'
+]
+
+def _is_cloudflare_blocked(text):
+    return sum(1 for sig in CLOUDFLARE_SIGNATURES if sig in text) >= 2
+
 
 def _get_homepage_hash(url):
     """Sirf homepage fetch karo aur uska hash nikalo"""
@@ -62,9 +71,11 @@ def _scrape_with_requests(base_url, domain, pages_to_visit, visited, all_text):
             text = ' '.join(text.split())
 
             page_name = urlparse(url).path or 'home'
-            if text.strip():
+            if text.strip() and not _is_cloudflare_blocked(text):
                 all_text[page_name] = text
-            print(f"[Scraper] Done: {url}")
+                print(f"[Scraper] Done: {url}")
+            elif _is_cloudflare_blocked(text):
+                print(f"[Scraper] Cloudflare blocked — skip: {url}")
 
             for link in soup.find_all('a', href=True):
                 full_url = urljoin(base_url, link['href'])
@@ -92,7 +103,8 @@ def _scrape_with_playwright(base_url, domain, pages_to_visit, visited, all_text)
             if url in visited:
                 continue
             try:
-                page.goto(url, wait_until='networkidle', timeout=20000)
+                page.goto(url, wait_until='domcontentloaded', timeout=15000)
+                page.wait_for_timeout(1500)
                 visited.add(url)
 
                 # JS render hone ke baad HTML lo
@@ -105,9 +117,11 @@ def _scrape_with_playwright(base_url, domain, pages_to_visit, visited, all_text)
                 text = ' '.join(text.split())
 
                 page_name = urlparse(url).path or 'home'
-                if text.strip():
+                if text.strip() and not _is_cloudflare_blocked(text):
                     all_text[page_name] = text
-                print(f"[Playwright] Done: {url}")
+                    print(f"[Playwright] Done: {url}")
+                elif _is_cloudflare_blocked(text):
+                    print(f"[Playwright] Cloudflare blocked — skip: {url}")
 
                 # Saare links dhundo
                 links = page.eval_on_selector_all('a[href]', 'els => els.map(e => e.href)')

@@ -6,6 +6,7 @@ import uuid
 import re
 import hashlib
 import threading
+import base64
 from openai import OpenAI
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
@@ -87,41 +88,52 @@ def build_context(school_id):
 
     config = load_school_config(school_id)
     school_name = config.get('school_name', school_id) if config else school_id
+    custom_info = (config or {}).get('custom_info', '').strip() if config else ''
+    custom_info_enabled = (config or {}).get('custom_info_enabled', True) if config else True
 
     if not scraped:
         context = f"=== {school_name} - Information ===\n"
         context += json.dumps(data, ensure_ascii=False, indent=2)
+        if custom_info and custom_info_enabled:
+            context += f"\n\n=== Additional Information (use if answer not found above) ===\n{custom_info}\n"
         return context
 
     data.pop('phone', None)
     data.pop('note', None)
 
-    # Important pages — poora content chahiye
     PRIORITY_KEYWORDS = [
         'about', 'founder', 'team', 'contact', 'service', 'product',
         'fee', 'admission', 'price', 'plan', 'faculty', 'staff',
-        'mission', 'vision', 'history', 'overview', 'index'
+        'mission', 'vision', 'history', 'overview', 'index',
+        'portfolio', 'project', 'work', 'case', 'client', 'solution'
     ]
 
     priority_pages = {}
     other_pages = {}
 
     for page, text in scraped.items():
-        page_lower = page.lower()
-        if any(kw in page_lower for kw in PRIORITY_KEYWORDS):
+        page_lower = page.lower().strip('/')
+        is_homepage = page_lower in ('', 'home', 'index', '/')
+        if is_homepage or any(kw in page_lower for kw in PRIORITY_KEYWORDS):
             priority_pages[page] = text
         else:
             other_pages[page] = text
 
-    context = f"=== {school_name} — Website Data ===\n"
-    context += "\n[IMPORTANT PAGES — Read carefully, answers are here]\n"
+    context = f"=== {school_name} — Website Data (PRIMARY SOURCE) ===\n"
+    context += "\n[IMPORTANT PAGES — Check here first]\n"
     for page, text in priority_pages.items():
-        context += f"\n--- {page} ---\n{text[:4000]}\n"
+        page_lower = page.lower().strip('/')
+        is_homepage = page_lower in ('', 'home', 'index', '/')
+        limit = 8000 if is_homepage else 4000
+        context += f"\n--- {page} ---\n{text[:limit]}\n"
 
     if other_pages:
         context += "\n[OTHER PAGES]\n"
         for page, text in other_pages.items():
-            context += f"\n--- {page} ---\n{text[:1000]}\n"
+            context += f"\n--- {page} ---\n{text[:1500]}\n"
+
+    if custom_info and custom_info_enabled:
+        context += f"\n\n=== Additional Information (use ONLY if answer is NOT found in website data above) ===\n{custom_info}\n"
 
     return context
 
@@ -161,7 +173,7 @@ def admin_do_login():
     if password == ADMIN_PASSWORD:
         session['admin_logged_in'] = True
         return redirect(url_for('admin_panel'))
-    return render_template('admin.html', page='login', error='Galat password!')
+    return render_template('admin.html', page='login', error='Incorrect password!')
 
 
 @app.route('/admin/logout')
@@ -179,7 +191,8 @@ def admin_panel():
     active_sid  = request.args.get('sid', '')
     return render_template('admin.html', page='panel', schools=schools,
                            server_url=server_url, msg=msg, active_sid=active_sid,
-                           scrape_status=_scrape_status)
+                           scrape_status=_scrape_status,
+                           open_info_sid=active_sid if 'info' in msg or request.args.get('openinfo') else '')
 
 
 @app.route('/admin/add-school', methods=['POST'])
@@ -192,7 +205,7 @@ def admin_add_school():
     if not school_name:
         schools = get_all_schools()
         return render_template('admin.html', page='panel', schools=schools,
-                               server_url=SERVER_URL, error='School ka naam zaroori hai!')
+                               server_url=SERVER_URL, error='Client name is required!')
 
     school_id = slugify(school_name)
     school_dir = os.path.join(DATA_DIR, school_id)
@@ -277,6 +290,90 @@ def admin_scrape(school_id):
 def scrape_status(school_id):
     status = _scrape_status.get(school_id, 'idle')
     return jsonify({'status': status})
+
+
+def _extract_pdf_text(file_bytes):
+    try:
+        from pypdf import PdfReader
+        import io
+        reader = PdfReader(io.BytesIO(file_bytes))
+        texts = []
+        for page in reader.pages:
+            t = page.extract_text()
+            if t:
+                texts.append(t.strip())
+        return '\n'.join(texts)
+    except Exception as e:
+        print(f"[PDF] Extract error: {e}")
+        return ''
+
+
+def _extract_image_text(file_bytes, mime_type):
+    try:
+        b64 = base64.standard_b64encode(file_bytes).decode()
+        resp = openai_client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[{
+                'role': 'user',
+                'content': [
+                    {'type': 'image_url', 'image_url': {'url': f'data:{mime_type};base64,{b64}'}},
+                    {'type': 'text', 'text': 'Extract ALL text from this image exactly as written. Return only the extracted text, nothing else.'}
+                ]
+            }],
+            max_tokens=2000
+        )
+        return resp.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"[Image OCR] Error: {e}")
+        return ''
+
+
+@app.route('/admin/custom-info/<school_id>', methods=['POST'])
+@admin_required
+def admin_save_custom_info(school_id):
+    config = load_school_config(school_id)
+    if not config:
+        return redirect(url_for('admin_panel'))
+
+    action = request.form.get('action', 'save')
+
+    if action == 'delete':
+        config['custom_info'] = ''
+        config['custom_info_enabled'] = True
+        save_school_config(school_id, config)
+        _cache.pop(school_id, None)
+        return redirect(url_for('admin_panel') + f'?msg=info_deleted&sid={school_id}')
+
+    if action == 'toggle':
+        config['custom_info_enabled'] = not config.get('custom_info_enabled', True)
+        save_school_config(school_id, config)
+        _cache.pop(school_id, None)
+        return redirect(url_for('admin_panel') + f'?sid={school_id}')
+
+    # Save text
+    existing = config.get('custom_info', '')
+    new_text = request.form.get('custom_info', '').strip()
+
+    # Handle file upload
+    file = request.files.get('info_file')
+    extracted = ''
+    if file and file.filename:
+        file_bytes = file.read()
+        fname = file.filename.lower()
+        if fname.endswith('.pdf'):
+            extracted = _extract_pdf_text(file_bytes)
+        elif any(fname.endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.webp', '.gif']):
+            mime = 'image/png' if fname.endswith('.png') else \
+                   'image/gif' if fname.endswith('.gif') else \
+                   'image/webp' if fname.endswith('.webp') else 'image/jpeg'
+            extracted = _extract_image_text(file_bytes, mime)
+
+    combined = '\n\n'.join(filter(None, [existing, new_text, extracted]))
+    config['custom_info'] = combined
+    config['custom_info_enabled'] = config.get('custom_info_enabled', True)
+    save_school_config(school_id, config)
+    _cache.pop(school_id, None)
+    return redirect(url_for('admin_panel') + f'?msg=info_saved&sid={school_id}')
 
 
 # ─── Widget JS Endpoint ──────────────────────────────────────────────────────
@@ -532,7 +629,7 @@ def widget_js(school_id):
           <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
         </button>
       </div>
-      <div id="_cb_powered">Powered by SchoolBot AI</div>
+      <div id="_cb_powered">Powered by ChatBot AI</div>
     </div>
   `;
   document.body.appendChild(wrap);
@@ -598,7 +695,7 @@ def widget_js(school_id):
     btn.style.display = 'none';
     inp.focus();
     if (msgs.children.length === 0) {{
-      addMsg("Hello! &#128075; I'm <strong>" + SCHOOL_NAME + "'s</strong> AI Assistant. How can I help you today?<br><br>Feel free to ask about <b>admissions</b>, <b>fees</b>, <b>timings</b>, or anything else!", 'bot');
+      addMsg("Hello! &#128075; I'm <strong>" + SCHOOL_NAME + "'s</strong> AI Assistant. How can I help you today?<br><br>Feel free to ask me anything about us!", 'bot');
     }}
   }}
 
@@ -694,10 +791,10 @@ def chat(school_id):
         config = load_school_config(school_id)
 
         if not config:
-            return jsonify({'response': 'School nahi mili. Embed code check karein.'}), 404
+            return jsonify({'response': 'Client not found. Please check the embed code.'}), 404
 
         if not config.get('active', False):
-            return jsonify({'response': 'Is school ka chatbot filhal band hai.'}), 200
+            return jsonify({'response': 'This chatbot is currently inactive.'}), 200
 
         api_key = request.headers.get('X-API-Key', '')
         if api_key != config.get('api_key', ''):
@@ -721,16 +818,17 @@ def chat(school_id):
         system_prompt = f"""You are the official AI assistant for {school_name}.
 
 STRICT RULES:
-1. Before saying "I don't know", search CAREFULLY through ALL pages in the data below — the answer is usually there
-2. Only use information from the data provided — never fabricate
-3. For contact details (phone, email, address), use ONLY what is in the data below
-4. If after carefully reading all pages the answer is truly not there, say: "I don't have this information. Please contact the office directly."
-5. Reply in the same language the user writes in (English, Roman Urdu, or Urdu)
-6. Keep answers concise and helpful
-7. Never discuss unrelated topics or other organizations
-8. Always be friendly and professional
+1. PRIORITY ORDER: First search "Website Data (PRIMARY SOURCE)" — this is always most up-to-date. Only if the answer is truly not there, then check "Additional Information" section.
+2. Before saying "I don't know", search CAREFULLY through ALL sections — the answer is usually there.
+3. Only use information from the data provided — never fabricate or guess.
+4. For contact details (phone, email, address), use ONLY what is in the data below.
+5. If after carefully reading ALL sections the answer is truly not there, say: "I don't have this information. Please contact us directly."
+6. Reply in the same language the user writes in (English, Roman Urdu, or Urdu).
+7. Keep answers concise and helpful.
+8. Never discuss unrelated topics or other organizations.
+9. Always be friendly and professional.
 
-{school_name} Website Data (search ALL pages below before answering):
+{school_name} Data:
 {school_context}
 """
 

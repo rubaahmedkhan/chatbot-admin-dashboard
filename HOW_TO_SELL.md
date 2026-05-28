@@ -49,9 +49,8 @@ Option 2: Unke liye bhi ek simple website banao — extra charge karo
 
 ## Pricing Reminder
 
-| Package       | Price         | Kya Mile Ga                        |
-|---------------|---------------|------------------------------------|
-| Basic         | 15,000/month  | Website chatbot                    |
-| Standard      | 25,000/month  | Website + WhatsApp                 |
-| Premium       | 40,000/month  | Website + WhatsApp + Facebook      |
-| Setup Fee     | 10,000 ek baar| Installation aur customization     |
+| Package       | Price              | Kya Mile Ga                                      |
+|---------------|--------------------|--------------------------------------------------|
+| Monthly       | Rs. 3,000/month    | Website chatbot, auto data sync, admin panel     |
+| Annual        | Rs. 30,000/year    | Same as monthly — 2 mahine free (save Rs. 6,000) |
+| Setup Fee     | Rs. 5,000 ek baar  | Onboarding, setup, aur embed karna               |

@@ -85,11 +85,11 @@ A dynamically served JavaScript widget with:
 
 | Plan | Price | Features |
 |---|---|---|
-| Starter | Rs. 2,000/month | 1 chatbot, up to 20 pages |
-| Growth | Rs. 5,000/month | 3 chatbots, up to 50 pages, priority support |
-| Enterprise | Custom | Unlimited, custom branding, dedicated support |
+| Monthly | Rs. 3,000/month | Website chatbot, up to 50 pages, auto-sync |
+| Annual | Rs. 30,000/year | Same features — 2 months free |
+| Setup Fee | Rs. 5,000 (one-time) | Onboarding and deployment |
 
-**Client acquisition:** Target school admins, coaching centers, small businesses with websites. Demo takes 10 minutes — show them their own website's chatbot live.
+**Client acquisition:** Target schools, coaching centers, clinics, and small businesses with websites. Demo takes 10 minutes — show them their own website's chatbot live.
 
 ---
 

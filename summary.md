@@ -127,9 +127,10 @@ Admin panel: `http://localhost:5000/admin`
 ---
 
 ## Business Model
-- **Setup fee:** Rs. 15,000–25,000 (ek baar)
-- **Monthly/Annual:** Rs. 3,000/month ya Rs. 25,000/saal
+- **Setup fee:** Rs. 5,000 (ek baar)
+- **Monthly:** Rs. 3,000/month
+- **Annual:** Rs. 30,000/year (2 mahine free — save Rs. 6,000)
 - **Aapka cost:** ~Rs. 500–1,000/month (OpenAI API)
-- **Aapka profit:** Rs. 2,000–4,000 per school per month
+- **Aapka profit:** ~Rs. 2,000–2,500 per client per month
 
-Agar school pay na kare → Admin panel mein "Band Karein" dabao → chatbot band.
+Agar client pay na kare → Admin panel mein "Deactivate" dabao → chatbot band.

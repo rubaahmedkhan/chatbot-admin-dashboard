@@ -256,11 +256,11 @@ def admin_toggle(school_id):
 # school_id → 'running' | 'done' | 'error'
 _scrape_status = {}
 
-def _run_scrape(school_id, school_url):
+def _run_scrape(school_id, school_url, force=False):
     _scrape_status[school_id] = 'running'
     try:
         from scraper import scrape_website
-        result = scrape_website(school_url, school_id)
+        result = scrape_website(school_url, school_id, force=force)
         if result is not None:
             _cache.pop(school_id, None)
         _scrape_status[school_id] = 'done'
@@ -280,7 +280,7 @@ def admin_scrape(school_id):
     if _scrape_status.get(school_id) == 'running':
         return redirect(url_for('admin_panel') + '?msg=already_running&sid=' + school_id)
 
-    t = threading.Thread(target=_run_scrape, args=(school_id, config['school_url']), daemon=True)
+    t = threading.Thread(target=_run_scrape, args=(school_id, config['school_url']), kwargs={'force': True}, daemon=True)
     t.start()
     return redirect(url_for('admin_panel') + '?msg=scrape_started&sid=' + school_id)
 

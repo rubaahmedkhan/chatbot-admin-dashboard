@@ -7,3 +7,4 @@ test_embed.html
 .vscode/
 github.md
 =*
+venv/

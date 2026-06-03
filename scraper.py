@@ -9,7 +9,7 @@ from collections import Counter
 
 load_dotenv()
 
-MAX_PAGES = 60
+MAX_PAGES = 30
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -237,12 +237,12 @@ def _playwright_load_page(page, url):
     Lazy loading ke liye scroll bhi karta hai.
     """
     strategies = [
-        ('domcontentloaded', 20000, 2000),
-        ('networkidle',      25000, 1000),
-        ('load',             25000, 2000),
-        ('commit',           15000, 3000),
+        ('domcontentloaded', 20000, 1000),
+        ('load',             25000, 1000),
+        ('commit',           15000, 1500),
     ]
 
+    last_error = None
     for wait_until, timeout, extra in strategies:
         try:
             page.goto(url, wait_until=wait_until, timeout=timeout)
@@ -262,7 +262,7 @@ def _playwright_load_page(page, url):
                             resolve();
                         }
                     }, 80);
-                    setTimeout(() => { clearInterval(timer); resolve(); }, 5000);
+                    setTimeout(() => { clearInterval(timer); resolve(); }, 2500);
                 })""")
                 page.wait_for_timeout(600)
             except Exception:
@@ -291,9 +291,19 @@ def _playwright_load_page(page, url):
                 pass
 
             return True
-        except Exception:
+        except Exception as e:
+            last_error = e
             continue
 
+    # Aakhri try: koi bhi HTML mila toh use karo
+    try:
+        html = page.content()
+        if html and len(html) > 200:
+            return True
+    except Exception:
+        pass
+
+    print(f"[Playwright] Load fail reason: {type(last_error).__name__}: {str(last_error)[:120]}")
     return False
 
 

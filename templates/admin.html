@@ -704,6 +704,12 @@
                   <i class="fas fa-{% if has_info %}pen-to-square{% else %}file-circle-plus{% endif %}"></i>
                   {% if has_info %}Edit Info{% else %}Add Info{% endif %}
                 </button>
+                <form method="POST" action="/admin/delete/{{ school.school_id }}" style="display:inline"
+                      onsubmit="return confirm('DELETE {{ school.school_name }}?\n\nYe client aur uska sara data permanently delete ho jaye ga. Wapas nahi ho sakta!')">
+                  <button type="submit" class="btn btn-sm btn-danger">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </form>
               </div>
             </td>
           </tr>

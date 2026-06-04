@@ -192,7 +192,7 @@ def build_context(school_id):
     for page, text in priority_pages.items():
         page_lower = page.lower().strip('/')
         is_homepage = page_lower in ('', 'home', 'index', '/')
-        limit = 8000 if is_homepage else 4000
+        limit = 20000 if is_homepage else 5000
         context += f"\n--- {page} ---\n{text[:limit]}\n"
 
     if other_pages:
@@ -603,7 +603,7 @@ def widget_js(school_id):
     .cb_sl {{ font-size:10px; color:rgba(255,255,255,.4); font-weight:500; margin-top:1px; }}
 
     #_cb_msgs {{
-      flex:1; overflow-y:auto; padding:14px 0 10px;
+      flex:1; overflow-y:auto; padding:14px 16px 10px;
       display:flex; flex-direction:column; gap:8px;
       background:#f8fafc; scroll-behavior:smooth;
     }}
@@ -613,7 +613,7 @@ def widget_js(school_id):
 
     ._cb_g {{
       display:flex; flex-direction:column; gap:3px;
-      padding:0 16px;
+      padding:0;
     }}
     ._cb_g.user {{ align-items:flex-end; }}
     ._cb_g.bot  {{ align-items:flex-start; }}
@@ -623,22 +623,23 @@ def widget_js(school_id):
       background:linear-gradient(135deg,#6366f1,#8b5cf6);
       display:flex; align-items:center; justify-content:center;
     }}
-    ._cb_b {{
-      max-width:82%; padding:10px 14px; border-radius:16px;
+    #_cb_wrap ._cb_b {{
+      max-width:75%; padding:14px 20px; border-radius:16px;
       font-size:13.5px; line-height:1.6; word-break:break-word;
     }}
-    ._cb_b.bot {{
+    #_cb_wrap ._cb_b.bot {{
       background:#fff; color:#1e293b; border-bottom-left-radius:4px;
       box-shadow:0 1px 4px rgba(0,0,0,.08),0 0 0 1px rgba(0,0,0,.04);
     }}
-    ._cb_b.user {{
+    #_cb_wrap ._cb_b.user {{
       background:linear-gradient(135deg,#4f46e5,#6d28d9);
       color:#fff; border-bottom-right-radius:4px;
+      margin-right:4px;
     }}
     ._cb_t {{ font-size:10px; color:#94a3b8; padding:0 2px; margin-top:3px; }}
     ._cb_g.user ._cb_t {{ text-align:right; }}
 
-    #_cb_tw {{ display:flex; align-items:flex-end; gap:8px; padding:0 16px; }}
+    #_cb_tw {{ display:flex; align-items:flex-end; gap:8px; padding:0; }}
     ._cb_tb {{
       background:#fff; border-radius:16px; border-bottom-left-radius:4px;
       padding:12px 16px;
